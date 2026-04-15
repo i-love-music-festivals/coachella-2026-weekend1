@@ -14,45 +14,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coachella 2026 weekend1 配信用タイムテーブル</title>
+<title>フェス配信用タイムテーブル</title>
 <style>
-    /* ==========================================
+    /* =========================================================================
        🎨 1. CSS変数（デザインの基本設定）
-       ==========================================
-       色やサイズを一箇所で管理し、変更を容易にします。
+       =========================================================================
+       全体の色やレイアウトの基準サイズを一箇所で管理し、変更を容易にします。
     */
     :root {
-        /* ステージカラー */
-        --color-main: #1c5b7c;
-        --color-outdoor: #1b9b9c;
-        --color-sahara: #71b92e;
-        --color-mojave: #e65100;
-        --color-gobi: #ef629f;
-        --color-sonora: #d32f2f;
-        --color-quasar: #fbc02d;
-        
         /* UIカラー設定 */
-        --color-mytt: #ffffff;
-        --bg-color: #ffffff;
-        --grid-border: #e0e0e0;
-        --text-color: #333;
-        
+        --color-mytt: #ffffff;      /* マイタイムテーブルの背景色 */
+        --bg-color: #ffffff;        /* アプリ全体の背景色 */
+        --grid-border: #e0e0e0;     /* グリッド（枠線）の色 */
+        --text-color: #333;         /* 基本のテキストカラー */
+
         /* レイアウトの基準サイズ */
-        --time-width: 60px;
-        --col-width: 120px;
-        --px-per-min: 2; /* 1分あたりの高さ（JavaScriptの定数と合わせる） */
+        --time-width: 60px;         /* 左側の時間軸の幅 */
+        --col-width: 120px;         /* 各ステージの1列あたりの幅 */
+        --px-per-min: 2;            /* 1分あたりの高さ（JavaScriptの定数と必ず合わせる） */
     }
 
-    /* ==========================================
+    /* =========================================================================
        🎨 2. 全体レイアウト・ヘッダー
-       ========================================== */
+       ========================================================================= */
+    /* 画面全体の基本設定 */
     body {
         margin: 0;
         padding: 0;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         background-color: var(--bg-color);
         color: var(--text-color);
-        overflow: hidden; /* スクロールは内部コンテナに任せる */
+        overflow: hidden; /* ページ全体のスクロールを禁止し、内部のコンテナのみスクロールさせる */
     }
 
     /* アプリ全体のコンテナ（画面の高さいっぱいに広げる） */
@@ -62,64 +54,81 @@
         height: 100vh;
     }
 
-    /* 上部固定ヘッダー */
+    /* 上部固定ヘッダー（黒背景） */
     header {
         background-color: #111;
         color: white;
-        padding: 5px;
+        padding: 10px 5px;
         text-align: center;
-        flex-shrink: 0;
+        flex-shrink: 0; /* スクロール時に縮まないように固定 */
     }
 
+    /* イベントタイトルの装飾 */
     h1 {
         font-size: 25px;
-        margin: 0 0 10px 0;
+        margin: 0 0 5px 0;
+    }
+    
+    /* イベントサブタイトルの装飾 */
+    .event-subtitle {
+        font-size: 16px;
+        margin-bottom: 10px;
     }
 
-    /* 免責事項・注記 */
+    /* 免責事項・注記の装飾 */
     .disclaimer {
         font-size: 12px;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
         color: #ccc;
     }
 
-    /* 日付切り替えタブ */
+    /* 最終更新日時の装飾 */
+    .update-time {
+        font-size: 12px;
+        color: #aaa;
+        margin-bottom: 10px;
+    }
+
+    /* 日付切り替えタブのコンテナ */
     .tabs {
         display: flex;
         justify-content: center;
         gap: 10px;
     }
 
+    /* 個別の日付ボタンの装飾 */
     .tab-btn {
         background-color: #333;
         color: white;
         border: none;
         padding: 8px 16px;
         border-radius: 4px;
-        font-size: 20px;
+        font-size: 18px;
         cursor: pointer;
+        transition: background-color 0.2s;
     }
 
+    /* 選択中の日付ボタンの装飾 */
     .tab-btn.active {
         background-color: #e65100;
         font-weight: bold;
     }
 
-    /* ==========================================
+    /* =========================================================================
        🎨 3. タイムテーブルエリア（スクロール領域）
-       ========================================== */
+       ========================================================================= */
     /* ヘッダーとグリッドを含むスクロールコンテナ */
     .scroll-container {
         display: flex;
         flex-direction: column;
-        flex-grow: 1;
+        flex-grow: 1; /* 残りの高さをすべて埋める */
         overflow: hidden;
     }
 
     /* ステージ名ヘッダーのラッパー（横スクロール同期用） */
     .stage-headers-wrapper {
         display: flex;
-        overflow-x: hidden;
+        overflow-x: hidden; /* スクロールバーは隠し、JSで同期させる */
         flex-shrink: 0;
         border-bottom: 2px solid #333;
         background: #f9f9f9;
@@ -131,11 +140,12 @@
         flex-shrink: 0;
         background: #fff;
         border-right: 1px solid var(--grid-border);
-        position: sticky;
+        position: sticky; /* 横スクロール時に左端に固定 */
         left: 0;
         z-index: 10;
     }
 
+    /* ステージヘッダーのリスト */
     .stage-header-list {
         display: flex;
     }
@@ -150,7 +160,7 @@
         box-sizing: border-box;
     }
     
-    /* マイタイムテーブル用のヘッダー（列数に応じて幅が可変） */
+    /* マイタイムテーブル用のヘッダー（列数に応じて幅が自動で広がる） */
     .stage-header.mytt { 
         width: auto;
         min-width: var(--col-width); 
@@ -167,13 +177,15 @@
         border-radius: 4px;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
     }
+    
+    /* マイタイムテーブル用のステージ名装飾 */
     .stage-name.mytt { 
         color: #333; 
         text-shadow: none; 
         background: #ccc;
     }
 
-    /* YouTube視聴リンクの装飾 */
+    /* YouTube視聴等のリンク装飾 */
     .watch-link {
         display: block;
         margin-top: 5px;
@@ -188,14 +200,14 @@
     }
     .watch-link:hover { background: #f0f0f0; }
 
-    /* ==========================================
+    /* =========================================================================
        🎨 4. グリッドとアーティストブロック
-       ========================================== */
+       ========================================================================= */
     /* スクロール可能なタイムテーブル本体 */
     .timetable-wrapper {
         display: flex;
         flex-grow: 1;
-        overflow: auto;
+        overflow: auto; /* ここで上下左右のスクロールを許可 */
         position: relative;
     }
 
@@ -205,7 +217,7 @@
         flex-shrink: 0;
         background: #fff;
         border-right: 1px solid var(--grid-border);
-        position: sticky;
+        position: sticky; /* スクロール時も左端に固定 */
         left: 0;
         z-index: 5;
     }
@@ -220,6 +232,7 @@
         color: #666;
         position: relative;
     }
+    /* 時刻のテキスト位置調整 */
     .time-slot span {
         position: absolute;
         top: -8px;
@@ -235,6 +248,8 @@
         border-right: 1px dashed var(--grid-border);
         position: relative;
     }
+    
+    /* マイタイムテーブル列の背景色 */
     .grid-col.mytt {
         background-color: rgba(238, 238, 238, 0.3);
         width: var(--col-width); 
@@ -243,17 +258,16 @@
     /* 背景のグリッド線（1時間ごとの破線） */
     .grid-bg-lines {
         position: absolute;
-        top: 0;
-        left: 0; right: 0; bottom: 0;
+        top: 0; left: 0; right: 0; bottom: 0;
         pointer-events: none;
         background-size: 100% calc(60 * var(--px-per-min) * 1px);
         background-image: linear-gradient(to bottom, var(--grid-border) 1px, transparent 1px);
         z-index: 0;
     }
 
-    /* アーティストの枠 */
+    /* アーティスト情報の枠（ブロック） */
     .artist-block {
-        position: absolute;
+        position: absolute; /* 親要素のtopからの位置で時間を表現する */
         left: 2px; right: 2px;
         border-radius: 4px;
         padding: 4px;
@@ -269,7 +283,7 @@
         transition: border-color 0.2s;
     }
 
-    /* リプレイ配信の装飾（斜めストライプ＆半透明） */
+    /* リプレイ配信（再放送）の装飾（斜めストライプ＆半透明） */
     .artist-block.is-replay {
         opacity: 0.85;
         background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px);
@@ -279,10 +293,10 @@
     .artist-block.favorited {
         border: 2px solid red !important;
         box-shadow: 0 0 8px red;
-        z-index: 2;
+        z-index: 2; /* 通常のブロックより手前に表示 */
     }
 
-    /* アーティストブロック内部のテキストレイアウト */
+    /* アーティストブロック内部のテキストレイアウト（上部：時間と★） */
     .artist-top {
         display: flex;
         justify-content: space-between;
@@ -290,21 +304,30 @@
         margin-bottom: 2px;
     }
 
+    /* アーティスト時間・名前・メタ情報のテキスト装飾 */
     .artist-time { font-weight: bold; font-size: 10px; }
     .artist-name { font-weight: 800; font-size: 13px; line-height: 1.2; margin-bottom: 2px; word-break: break-word; }
     .artist-meta { font-size: 9px; opacity: 0.9; }
 
-    /* お気に入りボタン（★） */
+    /* お気に入りボタン（★）の装飾 */
     .fav-btn {
-        background: none; border: none; color: white;
-        font-size: 16px; cursor: pointer; padding: 0; line-height: 1;
+        background: none;
+        border: none; 
+        color: white;
+        font-size: 16px; 
+        cursor: pointer; 
+        padding: 0; 
+        line-height: 1;
         text-shadow: 0 0 2px rgba(0,0,0,0.5);
     }
+    
+    /* お気に入り登録時の★の色 */
     .fav-btn.active { color: red; text-shadow: 0 0 2px white;}
 
-    /* ==========================================
+    /* =========================================================================
        🎨 5. 現在時刻の赤いライン・アニメーション
-       ========================================== */
+       ========================================================================= */
+    /* ライブ進行中を示す赤い水平線 */
     .current-time-line {
         position: absolute;
         left: 0; right: 0;
@@ -312,9 +335,11 @@
         background-color: red;
         z-index: 10;
         pointer-events: none;
-        display: none;
+        display: none; /* デフォルトは非表示、JSで制御 */
         box-shadow: 0 0 5px red;
     }
+    
+    /* 赤い線の左端の丸いポインター */
     .current-time-line::before {
         content: '';
         position: absolute;
@@ -325,16 +350,18 @@
         border-radius: 50%;
     }
 
-    /* 再生中の枠のパルスアニメーション */
+    /* ライブ中のアーティスト枠を点滅させるアニメーション定義 */
     @keyframes pulse-border {
         0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); border-color: red; }
         70% { box-shadow: 0 0 0 6px rgba(255, 0, 0, 0); border-color: #ff6b6b; }
         100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); border-color: red; }
     }
+    
+    /* ライブ中のアーティストブロックに適用するクラス */
     .artist-block.playing {
         border: 3px solid red;
         animation: pulse-border 1.5s infinite;
-        z-index: 3;
+        z-index: 3; /* 一番手前に表示 */
     }
 </style>
 </head>
@@ -342,24 +369,25 @@
 
 <div class="app-container">
     <header>
-        <h1>Coachella 2026 weekend1<br>配信用タイムテーブル (日本時間)</h1>
-        <div class="disclaimer">※各アーティストのジャンル・出身はAIによる判断です。</div>
-      <div id="update-time" style="font-size: 12px; color: #aaa; margin-bottom: 10px;"></div>
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchDay(1)">4/11 (土)</button>
-            <button class="tab-btn" onclick="switchDay(2)">4/12 (日)</button>
-            <button class="tab-btn" onclick="switchDay(3)">4/13 (月)</button>
-        </div>
+        <h1 id="event-title"></h1>
+        <div class="event-subtitle" id="event-subtitle"></div>
+        <div class="disclaimer" id="event-disclaimer"></div>
+        <div class="update-time" id="update-time"></div>
+        <div class="tabs" id="dayTabs">
+            </div>
     </header>
 
     <div class="scroll-container">
         <div class="stage-headers-wrapper" id="headerWrapper">
             <div class="stage-header-empty"></div>
-            <div class="stage-header-list" id="stageHeaders"></div>
+            <div class="stage-header-list" id="stageHeaders">
+                </div>
         </div>
         
         <div class="timetable-wrapper" id="ttWrapper" onscroll="syncScroll()">
-            <div class="time-col" id="timeCol"></div>
+            <div class="time-col" id="timeCol">
+                </div>
+      
             <div style="display: flex; position: relative;" id="gridContainer">
                 <div class="current-time-line" id="currentTimeLine"></div>
             </div>
@@ -369,20 +397,25 @@
 
 <script>
 /* =========================================================================
-   ⚙️ 1. 基本設定（CONFIG）
-   来年の仕様変更の際は、ここの数値を調整してください。
+   ⚙️ 1. アプリケーション設定（EVENT_CONFIG）
+   今後のイベントの際は、ここの設定を変更するだけでOKです。
    ========================================================================= */
-const CONFIG = {
-    START_HOUR: 8,       // タイムテーブルの開始時刻（8時）
+const EVENT_CONFIG = {
+    // イベントの基本情報（HTMLに自動反映されます）
+    TITLE: "Coachella 2026 weekend1",
+    SUBTITLE: "配信用タイムテーブル (日本時間)",
+    DISCLAIMER: "※各アーティストのジャンル・出身はAIによる判断です。",
+    
+    // タイムテーブルの表示設定
+    START_HOUR: 8,       // タイムテーブルの開始時刻（例：8時）
     END_HOUR: 25,        // タイムテーブルの終了時刻（25時 = 翌1時）
     PX_PER_MIN: 2        // 1分あたりの高さ（ピクセル数）。CSSの--px-per-minと揃える
 };
 
 /* =========================================================================
-   📅 2. ステージ＆データ定義（DATA）
-   来年は、ここの配列とオブジェクトを書き換えるだけで対応可能です。
+   📅 2. ステージ情報定義（stagesInfo）
+   ステージ名、背景色、配信のYouTube IDを定義します。
    ========================================================================= */
-// ステージ情報の定義
 const stagesInfo = [
     { id: 'main', name: 'Main Stage', color: '#1c5b7c', yt: '2NA7XUw51oo' },
     { id: 'outdoor', name: 'Outdoor Theatre', color: '#1b9b9c', yt: 'MdUBm8G41ZU' },
@@ -393,13 +426,17 @@ const stagesInfo = [
     { id: 'quasar', name: 'Quasar', color: '#fbc02d', yt: '1KANGsDaRvw' }
 ];
 
-// アーティスト情報を作成するヘルパー関数
+/* =========================================================================
+   🎙️ 3. アーティストデータ定義（timetableData）
+   各日の出演者情報を定義します。来年もここを差し替えるだけで動作します。
+   ========================================================================= */
+// アーティストオブジェクトを簡潔に生成するためのヘルパー関数
+// 引数: 名前, 開始時間, 終了時間, ジャンル, 出身, リプレイ(再放送)かどうか
 const e = (name, start, end, genre, origin, isReplay=false) => ({ name, start, end, genre, origin, isReplay });
 
-// タイムテーブルの全データ
 const timetableData = {
     day1: {
-        date: "2026-04-11",
+        date: "2026-04-11", // 日付を指定（フォーマット: YYYY-MM-DD）
         main: [
             e("Teddy Swims", "09:30", "10:20", "R&B/Soul", "USA"),
             e("The xx", "11:00", "11:55", "Indie Pop", "UK"),
@@ -683,141 +720,185 @@ const timetableData = {
 };
 
 /* =========================================================================
-   🧠 3. アプリケーション状態＆ローカルストレージ（LOGIC）
+   🧠 4. アプリケーション状態＆ローカルストレージ（LOGIC）
    ========================================================================= */
-let currentDay = 1; // 現在選択されている日（1, 2, 3）
+// 現在選択されている日（初期値は1日目）
+let currentDay = 1;
 
-// お気に入り情報をLocalStorageから読み込み（なければ空オブジェクト）
+// お気に入り（★）情報をLocalStorageから読み込み（なければ空オブジェクト）
+// これにより、リロードしてもお気に入り状態が保持されます
 let favorites = JSON.parse(localStorage.getItem('coachella_favs')) || {};
 
-/** お気に入り情報をLocalStorageへ保存する処理 */
+/**
+ * 変更されたお気に入り情報をLocalStorageへ保存する処理
+ */
 function saveFavorites() {
     localStorage.setItem('coachella_favs', JSON.stringify(favorites));
 }
-/**
- * 更新日時を表示する処理
- */
-function displayUpdateTime() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const date = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    
-    const timeString = `更新日時：${year}/${month}/${date} ${hours}:${minutes}`;
-    document.getElementById('update-time').textContent = timeString;
-}
 
-// 初期化時に実行
-displayUpdateTime();
-  
-/** お気に入りの追加・削除を切り替える処理 */
+/**
+ * お気に入りの追加・削除を切り替える処理
+ * @param {string} id - アーティストごとに一意となる識別ID
+ */
 function toggleFav(id) {
-    if (favorites[id]) delete favorites[id];
-    else favorites[id] = true;
+    if (favorites[id]) {
+        delete favorites[id]; // すでにお気に入りなら削除
+    } else {
+        favorites[id] = true; // お気に入りに追加
+    }
     saveFavorites();
-    renderTimetable(); // 表示を即時反映
+    renderTimetable(); // 表示を即時反映して画面を更新
 }
 
 /* =========================================================================
-   🕒 4. 時間計算ロジック（LOGIC）
+   🕒 5. 時間計算ロジック（TIME UTILITIES）
    ========================================================================= */
 /**
- * 時刻文字列(HH:mm)を、開始時間(START_HOUR)からの経過分に変換する。
- * 深夜時間帯(0:00〜)にも対応。
+ * 時刻文字列(HH:mm)を、開始時間(START_HOUR)からの「経過分数」に変換する。
+ * 深夜時間帯(0:00〜)にも対応し、高さを計算するための基準となります。
+ * @param {string} timeStr - "09:30" などの時刻文字列
+ * @returns {number} 経過分数
  */
 function timeToMins(timeStr) {
     const [h, m] = timeStr.split(':').map(Number);
-    return ((h < CONFIG.START_HOUR ? h + 24 : h) - CONFIG.START_HOUR) * 60 + m;
+    // 終了時間が24時を超える場合の計算 (例：1時は25時として計算)
+    const adjustedHour = (h < EVENT_CONFIG.START_HOUR) ? h + 24 : h;
+    return (adjustedHour - EVENT_CONFIG.START_HOUR) * 60 + m;
 }
 
-/** 表示用の時刻フォーマット調整 (24以上の数値を翌日表記に直す) */
+/** * 表示用の時刻フォーマット調整
+ * 内部的に25:00として扱っている時間を、表示時は1:00に直します。
+ * @param {string} timeStr - "25:30" などの時刻文字列
+ * @returns {string} "1:30" のようなフォーマット済み文字列
+ */
 function formatTimeDisplay(timeStr) {
     let [h, m] = timeStr.split(':').map(Number);
     if(h >= 24) h -= 24;
     return `${h}:${m.toString().padStart(2,'0')}`;
 }
 
-/** ヘッダーとタイムテーブル本体の横スクロールを同期させる処理 */
-function syncScroll() {
-    document.getElementById('headerWrapper').scrollLeft = document.getElementById('ttWrapper').scrollLeft;
-}
-
-/**
- * ライブ進行中の赤線を引くための「現在の相対的な分」を取得する。
- * 表示中の日程と実際の現実の日付が合致している時のみ数値を返す。
+/** * ライブ進行中の赤線を引くための「現在の相対的な分数」を取得する。
+ * 表示中の日程と実際の現実の日付が合致している時のみ数値を返します。
+ * @param {string} baseDateStr - "2026-04-11" のような対象日の日付文字列
+ * @returns {number|null} 該当日であれば分数を、違えば null を返す
  */
 function getRelativeMins(baseDateStr) {
     const now = new Date();
     const dataDate = new Date(baseDateStr);
     
-    // 年月日が一致しているか、または翌日の深夜(START_HOUR未満)かチェック
+    // 年月日が完全に一致しているか、または「翌日の深夜(START_HOUR未満)」かをチェック
     const isToday = now.toDateString() === dataDate.toDateString();
-    const isLateNight = now.getHours() < CONFIG.START_HOUR && now.getDate() === dataDate.getDate() + 1;
-    
+    const isLateNight = now.getHours() < EVENT_CONFIG.START_HOUR && now.getDate() === dataDate.getDate() + 1;
+
     if (isToday || isLateNight) {
         let h = now.getHours();
-        if (h < CONFIG.START_HOUR) h += 24;
-        return (h - CONFIG.START_HOUR) * 60 + now.getMinutes();
+        if (h < EVENT_CONFIG.START_HOUR) h += 24; // 深夜は24時間を足して計算
+        return (h - EVENT_CONFIG.START_HOUR) * 60 + now.getMinutes();
     }
     return null; // 該当日でなければ線は表示しない
 }
 
 /* =========================================================================
-   🎨 5. レンダリング・HTML生成（RENDERING）
+   🎨 6. レンダリング・HTML生成（RENDERING & UI）
    ========================================================================= */
+
 /**
- * ステージヘッダー部分のHTMLを生成・描画する処理。
- * マイタイムテーブルの列数（myttCols）に応じて見出しの幅を結合・調整する。
+ * 【新規追加】設定情報からヘッダーのテキスト等を初期化する処理
+ */
+function initHeaderUI() {
+    document.getElementById('event-title').innerHTML = EVENT_CONFIG.TITLE;
+    document.getElementById('event-subtitle').innerHTML = EVENT_CONFIG.SUBTITLE;
+    document.getElementById('event-disclaimer').innerHTML = EVENT_CONFIG.DISCLAIMER;
+    
+    // 最終更新日時の表示
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const date = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('update-time').textContent = `更新日時：${year}/${month}/${date} ${hours}:${minutes}`;
+    
+    // 日付タブの動的生成
+    let tabsHtml = '';
+    let dayIndex = 1;
+    const daysArr = ['日', '月', '火', '水', '木', '金', '土'];
+    
+    for (const dayKey in timetableData) {
+        const dateObj = new Date(timetableData[dayKey].date);
+        const dayOfWeek = daysArr[dateObj.getDay()];
+        const formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()} (${dayOfWeek})`;
+        
+        // 初回は1日目をアクティブにする
+        const activeClass = (dayIndex === currentDay) ? 'active' : '';
+        tabsHtml += `<button class="tab-btn ${activeClass}" onclick="switchDay(${dayIndex})">${formattedDate}</button>`;
+        dayIndex++;
+    }
+    document.getElementById('dayTabs').innerHTML = tabsHtml;
+}
+
+/**
+ * ステージヘッダー部分（My Timetable含む）のHTMLを生成・描画する処理。
+ * @param {number} myttCols - マイタイムテーブルで必要となる列数
  */
 function renderHeaders(myttCols) {
     let html = '';
-    
+
     // マイタイムテーブルの見出し（列が1つ以上あれば生成）
+    // 列数に応じて横幅を拡張（結合）することで1つの大きなタイトルにする
     if(myttCols > 0) {
-        html += `<div class="stage-header mytt" style="width: calc(var(--col-width) * ${myttCols});"><div class="stage-name mytt">My Timetable</div></div>`;
+        html += `<div class="stage-header mytt" style="width: calc(var(--col-width) * ${myttCols});">
+                    <div class="stage-name mytt">My Timetable</div>
+                 </div>`;
     }
     
-    // 各ステージの見出し
+    // 各ステージの見出しを生成（設定配列 stagesInfo からループ生成）
     stagesInfo.forEach(stage => {
         html += `<div class="stage-header">
             <div class="stage-name" style="background-color: ${stage.color}">${stage.name}</div>
             <a href="https://www.youtube.com/watch?v=${stage.yt}" target="_blank" class="watch-link">Watch Live📺</a>
         </div>`;
     });
+    
     document.getElementById('stageHeaders').innerHTML = html;
 }
 
 /**
- * 個別のアーティストブロックのHTMLを生成する処理。
- * 時間の長さに応じて高さを計算し、色やクラスを適用する。
+ * 個別のアーティストブロック（四角い枠）のHTMLを生成する処理。
+ * 時間の長さに応じて高さを計算し、色や表示状態クラスを適用する。
  */
 function getArtistHtml(artist, stage, dayKey, isMyTT = false, currentMins) {
     const startMin = timeToMins(artist.start);
     const endMin = timeToMins(artist.end);
-    const duration = endMin - startMin;
+    const duration = endMin - startMin; // 出演時間（分）
     
-    // 一意のIDを生成してお気に入りの判定に使用
-    const favId = `${dayKey}_${stage.id}_${artist.name.replace(/\s+/g, '')}`;
+    // 一意のIDを生成してお気に入りの判定に使用（スペースや特殊文字を排除）
+    const cleanName = artist.name.replace(/<[^>]*>/g, '').replace(/[^a-zA-Z0-9ぁ-んァ-ヶー一-龠]/g, '');
+    const favId = `${dayKey}_${stage.id}_${cleanName}`;
     const isFav = favorites[favId];
     
-    // 現在の時間がアーティストの出演時間内かどうか判定
+    // 現在の時間がアーティストの出演時間内かどうか判定（赤い枠の点滅用）
     const isPlaying = currentMins !== null && currentMins >= startMin && currentMins < endMin;
-
+    
+    // 適用するCSSクラスを配列で管理
     const classes = ['artist-block'];
     if(artist.isReplay) classes.push('is-replay');
     if(isFav) classes.push('favorited');
     if(isPlaying) classes.push('playing');
 
+    // ユーザー要望: ジャンルと出身は表示を維持する
+    // マイタイムテーブル側（isMyTTがtrue）の時は、どのステージか分かるようにステージ名も追記
+    const metaInfo = `${artist.genre} | ${artist.origin} ${isMyTT ? '<br>['+stage.name+']' : ''}`;
+
+    // 絶対配置（top, height）でブロックを描画
     return `
-    <div class="${classes.join(' ')}" style="top: ${startMin * CONFIG.PX_PER_MIN}px; height: ${duration * CONFIG.PX_PER_MIN}px; background-color: ${stage.color};">
+    <div class="${classes.join(' ')}" style="top: ${startMin * EVENT_CONFIG.PX_PER_MIN}px; height: ${duration * EVENT_CONFIG.PX_PER_MIN}px; background-color: ${stage.color};">
         <div class="artist-top">
             <span class="artist-time">${formatTimeDisplay(artist.start)}-${formatTimeDisplay(artist.end)}</span>
             <button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFav('${favId}')">★</button>
         </div>
         <div class="artist-name">${artist.name}</div>
-        <div class="artist-meta">${artist.genre} | ${artist.origin} ${isMyTT ? '<br>['+stage.name+']' : ''}</div>
+        <div class="artist-meta">${metaInfo}</div>
     </div>`;
 }
 
@@ -829,31 +910,37 @@ function renderTimetable() {
     const data = timetableData[dayKey];
     const currentMins = getRelativeMins(data.date);
     
-    // ① 時間軸カラムの生成
+    // ==========================================
+    // ① 時間軸カラムの生成（左端の時刻表示）
+    // ==========================================
     let timeHtml = '';
-    for(let h=CONFIG.START_HOUR; h<=CONFIG.END_HOUR; h++) {
-        timeHtml += `<div class="time-slot"><span>${h >= 24 ? h-24 : h}:00</span></div>`;
+    for(let h = EVENT_CONFIG.START_HOUR; h <= EVENT_CONFIG.END_HOUR; h++) {
+        timeHtml += `<div class="time-slot"><span>${h >= 24 ? h - 24 : h}:00</span></div>`;
     }
     document.getElementById('timeCol').innerHTML = timeHtml;
 
-// ②マイタイムテーブル（お気に入り）の抽出と列計算
+    // ==========================================
+    // ② マイタイムテーブル（お気に入り）の抽出
+    // ==========================================
     let myTtItems = [];
     stagesInfo.forEach((stage, stageIndex) => {
-        if(stage.id === 'food') return; // フードはお気に入り対象外
         (data[stage.id] || []).forEach(artist => {
             const cleanName = artist.name.replace(/<[^>]*>/g, '').replace(/[^a-zA-Z0-9ぁ-んァ-ヶー一-龠]/g, '');
-            if(favorites[`${dayKey}_${stage.id}_${cleanName}`]) {
-                // stageIndex（ステージの元の順番）も保持させる
+            const favId = `${dayKey}_${stage.id}_${cleanName}`;
+            
+            // お気に入りに登録されていれば配列に追加
+            if(favorites[favId]) {
                 myTtItems.push({ artist, stage, stageIndex });
             }
         });
     });
 
-    // ステージ順序優先、次に開始時間順でソート
+    // ==========================================
+    // ③ マイタイムテーブルの被り（時間重複）計算と列の配置
+    // ==========================================
+    // ステージ順序優先、次に開始時間順でソートして整列
     myTtItems.sort((a,b) => {
-        if (a.stageIndex !== b.stageIndex) {
-            return a.stageIndex - b.stageIndex;
-        }
+        if (a.stageIndex !== b.stageIndex) return a.stageIndex - b.stageIndex;
         return timeToMins(a.artist.start) - timeToMins(b.artist.start);
     });
 
@@ -886,58 +973,77 @@ function renderTimetable() {
             }
         }
 
-        // 適切な列が見つからなければ新しい列を追加
+        // 適切な列が見つからなければ、新しい列を追加してそこに配置
         if (!placed) {
             myTtColumns.push([item]);
         }
     });
     
-    // ヘッダーの描画（算出されたマイタイムテーブルの列数を渡す）
+    // ヘッダーの描画（算出されたマイタイムテーブルの列数を渡して幅を決定）
     renderHeaders(myTtColumns.length);
 
-    // ④ グリッド（MyTT + 各ステージ）の描画
+    // ==========================================
+    // ④ グリッド（MyTT + 各通常ステージ）の描画
+    // ==========================================
     let gridHtml = '';
-    
-    // マイタイムテーブル列の描画
+
+    // マイタイムテーブル列の描画（抽出した列データをもとに描画）
     myTtColumns.forEach(colItems => {
         gridHtml += `<div class="grid-col mytt"><div class="grid-bg-lines"></div>`;
-        colItems.forEach(item => gridHtml += getArtistHtml(item.artist, item.stage, dayKey, true, currentMins));
+        colItems.forEach(item => {
+            gridHtml += getArtistHtml(item.artist, item.stage, dayKey, true, currentMins);
+        });
         gridHtml += `</div>`;
     });
-    
-    // 通常ステージ列の描画
+
+    // 通常ステージ列の描画（設定された順番通りに描画）
     stagesInfo.forEach(stage => {
         gridHtml += `<div class="grid-col"><div class="grid-bg-lines"></div>`;
         if(data[stage.id]) {
-            data[stage.id].forEach(artist => gridHtml += getArtistHtml(artist, stage, dayKey, false, currentMins));
+            data[stage.id].forEach(artist => {
+                gridHtml += getArtistHtml(artist, stage, dayKey, false, currentMins);
+            });
         }
         gridHtml += `</div>`;
     });
-    
-    // 最後に現在時刻線を配置
+
+    // 最後に現在時刻の赤い直線をDOMに追加
     gridHtml += `<div class="current-time-line" id="currentTimeLine"></div>`;
     document.getElementById('gridContainer').innerHTML = gridHtml;
     
-    // 線の位置を更新
+    // 赤い線の位置を計算して表示
     updateCurrentTimeLine();
 }
 
 /* =========================================================================
-   🚀 6. インタラクション＆初期化（INITIALIZATION）
+   🚀 7. インタラクション＆初期化処理（EVENTS & INIT）
    ========================================================================= */
+
 /**
- * 上部のタブをクリックして表示日を切り替える処理。
+ * ヘッダーとタイムテーブル本体の横スクロールを同期させる処理。
+ * 下部のタイムテーブルを横スクロールした時、上のステージ名も連動して動きます。
+ */
+function syncScroll() {
+    document.getElementById('headerWrapper').scrollLeft = document.getElementById('ttWrapper').scrollLeft;
+}
+
+/**
+ * 上部の日付タブをクリックして表示日を切り替える処理。
+ * @param {number} day - 切り替えたい日のインデックス（1, 2, 3...）
  */
 function switchDay(day) {
     currentDay = day;
     // タブの見た目（アクティブ状態）を更新
-    document.querySelectorAll('.tab-btn').forEach((btn, idx) => btn.classList.toggle('active', idx + 1 === day));
+    document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx + 1 === day);
+    });
+    // 新しい日のデータでタイムテーブルを再描画
     renderTimetable();
 }
 
 /**
- * 現在時刻（赤い線）の表示位置を更新する処理。
- * 定期的に実行されます。
+ * 現在時刻を示す赤い水平線の表示位置を更新する処理。
+ * 1分ごとに定期的に呼び出されます。
  */
 function updateCurrentTimeLine() {
     const line = document.getElementById('currentTimeLine');
@@ -946,20 +1052,27 @@ function updateCurrentTimeLine() {
     const data = timetableData[`day${currentDay}`];
     const currentMins = getRelativeMins(data.date);
 
-    // 時間枠内（開始〜終了時刻）に収まっている場合のみ線を描画
-    if(currentMins !== null && currentMins >= 0 && currentMins <= (CONFIG.END_HOUR - CONFIG.START_HOUR) * 60) {
+    // 現在時刻が時間枠内（開始〜終了時刻）に収まっている場合のみ線を描画
+    if(currentMins !== null && currentMins >= 0 && currentMins <= (EVENT_CONFIG.END_HOUR - EVENT_CONFIG.START_HOUR) * 60) {
         line.style.display = 'block';
-        line.style.top = `${currentMins * CONFIG.PX_PER_MIN}px`;
+        line.style.top = `${currentMins * EVENT_CONFIG.PX_PER_MIN}px`;
     } else {
-        line.style.display = 'none';
+        line.style.display = 'none'; // 時間外、または違う日の場合は非表示
     }
 }
 
-// ページの初期レンダリングを実行
+// ---------------------------------------------------------
+// 🚀 アプリケーション起動時の初期化フロー
+// ---------------------------------------------------------
+// 1. ヘッダーやタブのUIをデータから動的に生成
+initHeaderUI();
+
+// 2. タイムテーブル本体を描画
 renderTimetable();
 
-// 1分(60000ミリ秒)ごとに現在時刻線を自動更新
+// 3. 1分(60000ミリ秒)ごとに現在時刻の赤い線を自動更新するタイマーをセット
 setInterval(updateCurrentTimeLine, 60000);
+
 </script>
 </body>
 </html>
