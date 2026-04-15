@@ -72,7 +72,7 @@
     }
 
     h1 {
-        font-size: 16px;
+        font-size: 25px;
         margin: 0 0 10px 0;
     }
 
@@ -344,6 +344,7 @@
     <header>
         <h1>Coachella 2026 weekend1<br>配信用タイムテーブル (日本時間)</h1>
         <div class="disclaimer">※各アーティストのジャンル・出身はAIによる判断です。</div>
+      <div id="update-time" style="font-size: 12px; color: #aaa; margin-bottom: 10px;"></div>
         <div class="tabs">
             <button class="tab-btn active" onclick="switchDay(1)">4/11 (土)</button>
             <button class="tab-btn" onclick="switchDay(2)">4/12 (日)</button>
@@ -693,7 +694,24 @@ let favorites = JSON.parse(localStorage.getItem('coachella_favs')) || {};
 function saveFavorites() {
     localStorage.setItem('coachella_favs', JSON.stringify(favorites));
 }
+/**
+ * 更新日時を表示する処理
+ */
+function displayUpdateTime() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const date = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    const timeString = `更新日時：${year}/${month}/${date} ${hours}:${minutes}`;
+    document.getElementById('update-time').textContent = timeString;
+}
 
+// 初期化時に実行
+displayUpdateTime();
+  
 /** お気に入りの追加・削除を切り替える処理 */
 function toggleFav(id) {
     if (favorites[id]) delete favorites[id];
