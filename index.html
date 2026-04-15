@@ -343,7 +343,7 @@
 <div class="app-container">
     <header>
         <h1>Coachella 2026 weekend1<br>配信用タイムテーブル (日本時間)</h1>
-        <div class="disclaimer">※ジャンル・出身はAIによる判断です。</div>
+        <div class="disclaimer">※各アーティストのジャンル・出身はAIによる判断です。</div>
         <div class="tabs">
             <button class="tab-btn active" onclick="switchDay(1)">4/11 (土)</button>
             <button class="tab-btn" onclick="switchDay(2)">4/12 (日)</button>
@@ -758,7 +758,7 @@ function renderHeaders(myttCols) {
     
     // マイタイムテーブルの見出し（列が1つ以上あれば生成）
     if(myttCols > 0) {
-        html += `<div class="stage-header mytt" style="width: calc(var(--col-width) * ${myttCols});"><div class="stage-name mytt">マイタイムテーブル</div></div>`;
+        html += `<div class="stage-header mytt" style="width: calc(var(--col-width) * ${myttCols});"><div class="stage-name mytt">My Timetable</div></div>`;
     }
     
     // 各ステージの見出し
@@ -818,31 +818,66 @@ function renderTimetable() {
     }
     document.getElementById('timeCol').innerHTML = timeHtml;
 
-// ②マイタイムテーブルの列を元のステージ順に基づいて構築するロジック
-    let myTtColumns = [];
-    
-    // stagesInfoの順番（元のステージ列の順番）で処理を行う
-    stagesInfo.forEach(stage => {
-        let colItems = [];
-        if(data[stage.id]) {
-            data[stage.id].forEach(artist => {
-                const favId = `${dayKey}_${stage.id}_${artist.name.replace(/\s+/g, '')}`;
-                if(favorites[favId]) colItems.push({ artist, stage });
-            });
+// ②マイタイムテーブル（お気に入り）の抽出と列計算
+    let myTtItems = [];
+    stagesInfo.forEach((stage, stageIndex) => {
+        if(stage.id === 'food') return; // フードはお気に入り対象外
+        (data[stage.id] || []).forEach(artist => {
+            const cleanName = artist.name.replace(/<[^>]*>/g, '').replace(/[^a-zA-Z0-9ぁ-んァ-ヶー一-龠]/g, '');
+            if(favorites[`${dayKey}_${stage.id}_${cleanName}`]) {
+                // stageIndex（ステージの元の順番）も保持させる
+                myTtItems.push({ artist, stage, stageIndex });
+            }
+        });
+    });
+
+    // ステージ順序優先、次に開始時間順でソート
+    myTtItems.sort((a,b) => {
+        if (a.stageIndex !== b.stageIndex) {
+            return a.stageIndex - b.stageIndex;
         }
+        return timeToMins(a.artist.start) - timeToMins(b.artist.start);
+    });
+
+    let myTtColumns = []; 
+    myTtItems.forEach(item => {
+        let maxOverlapCol = -1;
         
-        // そのステージにお気に入りアーティストが1組以上いる場合のみ、マイタイムテーブルの1列として追加
-        if(colItems.length > 0) {
-            // 時間順にソート（同じステージ内なので基本被らないが順序を保証）
-            colItems.sort((a,b) => timeToMins(a.artist.start) - timeToMins(b.artist.start));
-            myTtColumns.push(colItems);
+        // 重複するアイテムが配置されている最大の列インデックスを取得
+        for (let colIdx = 0; colIdx < myTtColumns.length; colIdx++) {
+            const overlap = myTtColumns[colIdx].some(ex => {
+                return Math.max(timeToMins(item.artist.start), timeToMins(ex.artist.start)) < 
+                       Math.min(timeToMins(item.artist.end), timeToMins(ex.artist.end));
+            });
+            if (overlap) {
+                maxOverlapCol = Math.max(maxOverlapCol, colIdx);
+            }
+        }
+
+        let placed = false;
+        // 重複アイテムがある列より右側で、空いている列を探す
+        for (let colIdx = maxOverlapCol + 1; colIdx < myTtColumns.length; colIdx++) {
+            const overlap = myTtColumns[colIdx].some(ex => {
+                return Math.max(timeToMins(item.artist.start), timeToMins(ex.artist.start)) < 
+                       Math.min(timeToMins(item.artist.end), timeToMins(ex.artist.end));
+            });
+            if (!overlap) {
+                myTtColumns[colIdx].push(item);
+                placed = true;
+                break;
+            }
+        }
+
+        // 適切な列が見つからなければ新しい列を追加
+        if (!placed) {
+            myTtColumns.push([item]);
         }
     });
     
     // ヘッダーの描画（算出されたマイタイムテーブルの列数を渡す）
     renderHeaders(myTtColumns.length);
 
-    // ③ グリッド（MyTT + 各ステージ）の描画
+    // ④ グリッド（MyTT + 各ステージ）の描画
     let gridHtml = '';
     
     // マイタイムテーブル列の描画
