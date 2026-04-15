@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Coachella 2026 weekend1</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coachella 2026 weekend1 配信用タイムテーブル</title>
+<style>
+    /* ==========================================
+       🎨 1. CSS変数（デザインの基本設定）
+       ==========================================
+       色やサイズを一箇所で管理し、変更を容易にします。
+    */
+    :root {
+        /* ステージカラー */
+        --color-main: #1c5b7c;
+        --color-outdoor: #1b9b9c;
+        --color-sahara: #71b92e;
+        --color-mojave: #e65100;
+        --color-gobi: #ef629f;
+        --color-sonora: #d32f2f;
+        --color-quasar: #fbc02d;
+        
+        /* UIカラー設定 */
+        --color-mytt: #ffffff;
+        --bg-color: #ffffff;
+        --grid-border: #e0e0e0;
+        --text-color: #333;
+        
+        /* レイアウトの基準サイズ */
+        --time-width: 60px;
+        --col-width: 160px;
+        --px-per-min: 2; /* 1分あたりの高さ（JavaScriptの定数と合わせる） */
+    }
+
+    /* ==========================================
+       🎨 2. 全体レイアウト・ヘッダー
+       ========================================== */
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        overflow: hidden; /* スクロールは内部コンテナに任せる */
+    }
+
+    /* アプリ全体のコンテナ（画面の高さいっぱいに広げる） */
+    .app-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    /* 上部固定ヘッダー */
+    header {
+        background-color: #111;
+        color: white;
+        padding: 10px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    h1 {
+        font-size: 16px;
+        margin: 0 0 10px 0;
+    }
+
+    /* 免責事項・注記 */
+    .disclaimer {
+        font-size: 12px;
+        margin-bottom: 10px;
+        color: #ccc;
+    }
+
+    /* 日付切り替えタブ */
+    .tabs {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .tab-btn {
+        background-color: #333;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .tab-btn.active {
+        background-color: #e65100;
+        font-weight: bold;
+    }
+
+    /* ==========================================
+       🎨 3. タイムテーブルエリア（スクロール領域）
+       ========================================== */
+    /* ヘッダーとグリッドを含むスクロールコンテナ */
+    .scroll-container {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        overflow: hidden;
+    }
+
+    /* ステージ名ヘッダーのラッパー（横スクロール同期用） */
+    .stage-headers-wrapper {
+        display: flex;
+        overflow-x: hidden;
+        flex-shrink: 0;
+        border-bottom: 2px solid #333;
+        background: #f9f9f9;
+    }
+
+    /* 左上の空白部分（時間軸の真上） */
+    .stage-header-empty {
+        width: var(--time-width);
+        flex-shrink: 0;
+        background: #fff;
+        border-right: 1px solid var(--grid-border);
+        position: sticky;
+        left: 0;
+        z-index: 10;
+    }
+
+    .stage-header-list {
+        display: flex;
+    }
+
+    /* 各ステージのヘッダーカラム */
+    .stage-header {
+        width: var(--col-width);
+        flex-shrink: 0;
+        text-align: center;
+        padding: 10px 5px;
+        border-right: 1px solid var(--grid-border);
+        box-sizing: border-box;
+    }
+    
+    /* マイタイムテーブル用のヘッダー（列数に応じて幅が可変） */
+    .stage-header.mytt { 
+        width: auto;
+        min-width: var(--col-width); 
+        background: #eee; 
+    }
+
+    /* ステージ名のラベル装飾 */
+    .stage-name {
+        font-weight: bold;
+        font-size: 14px;
+        margin-bottom: 5px;
+        color: #fff;
+        padding: 4px;
+        border-radius: 4px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+    .stage-name.mytt { 
+        color: #333; 
+        text-shadow: none; 
+        background: #ccc;
+    }
+
+    /* YouTube視聴リンクの装飾 */
+    .watch-link {
+        display: block;
+        margin-top: 5px;
+        font-size: 14px;
+        color: #000;
+        text-decoration: none;
+        font-weight: bold;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: #fff;
+    }
+    .watch-link:hover { background: #f0f0f0; }
+
+    /* ==========================================
+       🎨 4. グリッドとアーティストブロック
+       ========================================== */
+    /* スクロール可能なタイムテーブル本体 */
+    .timetable-wrapper {
+        display: flex;
+        flex-grow: 1;
+        overflow: auto;
+        position: relative;
+    }
+
+    /* 時間軸カラム（左側固定） */
+    .time-col {
+        width: var(--time-width);
+        flex-shrink: 0;
+        background: #fff;
+        border-right: 1px solid var(--grid-border);
+        position: sticky;
+        left: 0;
+        z-index: 5;
+    }
+
+    /* 1時間ごとの区切り線と時刻表示 */
+    .time-slot {
+        height: calc(60 * var(--px-per-min) * 1px);
+        box-sizing: border-box;
+        border-bottom: 1px solid var(--grid-border);
+        text-align: center;
+        font-size: 12px;
+        color: #666;
+        position: relative;
+    }
+    .time-slot span {
+        position: absolute;
+        top: -8px;
+        left: 5px;
+        background: #fff;
+        padding: 0 2px;
+    }
+
+    /* ステージごとの縦カラム */
+    .grid-col {
+        width: var(--col-width);
+        flex-shrink: 0;
+        border-right: 1px dashed var(--grid-border);
+        position: relative;
+    }
+    .grid-col.mytt {
+        background-color: rgba(238, 238, 238, 0.3);
+        width: var(--col-width); 
+    }
+
+    /* 背景のグリッド線（1時間ごとの破線） */
+    .grid-bg-lines {
+        position: absolute;
+        top: 0;
+        left: 0; right: 0; bottom: 0;
+        pointer-events: none;
+        background-size: 100% calc(60 * var(--px-per-min) * 1px);
+        background-image: linear-gradient(to bottom, var(--grid-border) 1px, transparent 1px);
+        z-index: 0;
+    }
+
+    /* アーティストの枠 */
+    .artist-block {
+        position: absolute;
+        left: 2px; right: 2px;
+        border-radius: 4px;
+        padding: 4px;
+        box-sizing: border-box;
+        font-size: 11px;
+        overflow: hidden;
+        color: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        border: 2px solid transparent;
+        transition: border-color 0.2s;
+    }
+
+    /* リプレイ配信の装飾（斜めストライプ＆半透明） */
+    .artist-block.is-replay {
+        opacity: 0.85;
+        background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px);
+    }
+
+    /* お気に入り登録済みアーティストの枠装飾 */
+    .artist-block.favorited {
+        border: 2px solid red !important;
+        box-shadow: 0 0 8px red;
+        z-index: 2;
+    }
+
+    /* アーティストブロック内部のテキストレイアウト */
+    .artist-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2px;
+    }
+
+    .artist-time { font-weight: bold; font-size: 10px; }
+    .artist-name { font-weight: 800; font-size: 13px; line-height: 1.2; margin-bottom: 2px; word-break: break-word; }
+    .artist-meta { font-size: 9px; opacity: 0.9; }
+
+    /* お気に入りボタン（★） */
+    .fav-btn {
+        background: none; border: none; color: white;
+        font-size: 16px; cursor: pointer; padding: 0; line-height: 1;
+        text-shadow: 0 0 2px rgba(0,0,0,0.5);
+    }
+    .fav-btn.active { color: red; text-shadow: 0 0 2px white;}
+
+    /* ==========================================
+       🎨 5. 現在時刻の赤いライン・アニメーション
+       ========================================== */
+    .current-time-line {
+        position: absolute;
+        left: 0; right: 0;
+        height: 2px;
+        background-color: red;
+        z-index: 10;
+        pointer-events: none;
+        display: none;
+        box-shadow: 0 0 5px red;
+    }
+    .current-time-line::before {
+        content: '';
+        position: absolute;
+        left: -4px;
+        top: -4px;
+        width: 10px; height: 10px;
+        background-color: red;
+        border-radius: 50%;
+    }
+
+    /* 再生中の枠のパルスアニメーション */
+    @keyframes pulse-border {
+        0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); border-color: red; }
+        70% { box-shadow: 0 0 0 6px rgba(255, 0, 0, 0); border-color: #ff6b6b; }
+        100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); border-color: red; }
+    }
+    .artist-block.playing {
+        border: 3px solid red;
+        animation: pulse-border 1.5s infinite;
+        z-index: 3;
+    }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>Coachella 2026 weekend1<br>配信用タイムテーブル (日本時間)</h1>
+        <div class="disclaimer">※ジャンル・出身はAIによる判断です。</div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchDay(1)">4/11 (土)</button>
+            <button class="tab-btn" onclick="switchDay(2)">4/12 (日)</button>
+            <button class="tab-btn" onclick="switchDay(3)">4/13 (月)</button>
+        </div>
+    </header>
+
+    <div class="scroll-container">
+        <div class="stage-headers-wrapper" id="headerWrapper">
+            <div class="stage-header-empty"></div>
+            <div class="stage-header-list" id="stageHeaders"></div>
+        </div>
+        
+        <div class="timetable-wrapper" id="ttWrapper" onscroll="syncScroll()">
+            <div class="time-col" id="timeCol"></div>
+            <div style="display: flex; position: relative;" id="gridContainer">
+                <div class="current-time-line" id="currentTimeLine"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* =========================================================================
+   ⚙️ 1. 基本設定（CONFIG）
+   来年の仕様変更の際は、ここの数値を調整してください。
+   ========================================================================= */
+const CONFIG = {
+    START_HOUR: 8,       // タイムテーブルの開始時刻（8時）
+    END_HOUR: 25,        // タイムテーブルの終了時刻（25時 = 翌1時）
+    PX_PER_MIN: 2        // 1分あたりの高さ（ピクセル数）。CSSの--px-per-minと揃える
+};
+
+/* =========================================================================
+   📅 2. ステージ＆データ定義（DATA）
+   来年は、ここの配列とオブジェクトを書き換えるだけで対応可能です。
+   ========================================================================= */
+// ステージ情報の定義
+const stagesInfo = [
+    { id: 'main', name: 'Main Stage', color: '#1c5b7c', yt: '2NA7XUw51oo' },
+    { id: 'outdoor', name: 'Outdoor Theatre', color: '#1b9b9c', yt: 'MdUBm8G41ZU' },
+    { id: 'sahara', name: 'Sahara', color: '#71b92e', yt: 'NlrpPqb0vwo' },
+    { id: 'mojave', name: 'Mojave', color: '#e65100', yt: 'HJVG2Ck3uuk' },
+    { id: 'gobi', name: 'GOBI', color: '#ef629f', yt: '4C5p1tdRv6c' },
+    { id: 'sonora', name: 'Sonora', color: '#d32f2f', yt: 'OGNPnQViI3g' },
+    { id: 'quasar', name: 'Quasar', color: '#fbc02d', yt: '1KANGsDaRvw' }
+];
+
+// アーティスト情報を作成するヘルパー関数
+const e = (name, start, end, genre, origin, isReplay=false) => ({ name, start, end, genre, origin, isReplay });
+
+// タイムテーブルの全データ
+const timetableData = {
+    day1: {
+        date: "2026-04-11",
+        main: [
+            e("Teddy Swims", "09:30", "10:20", "R&B/Soul", "USA"),
+            e("The xx", "11:00", "11:55", "Indie Pop", "UK"),
+            e("Sabrina Carpenter", "13:05", "14:35", "Pop", "USA"),
+            e("Anyma Presents Genesys", "16:00", "17:00", "Electronic", "Italy"),
+            e("Teddy Swims (Replay)", "18:50", "19:40", "R&B/Soul", "USA", true),
+            e("The xx (Replay)", "20:30", "21:25", "Indie Pop", "UK", true),
+            e("Sabrina Carpenter (Replay)", "22:35", "24:05", "Pop", "USA", true)
+        ],
+        outdoor: [
+            e("Dabeull", "08:00", "08:50", "Funk/Disco", "France"),
+            e("Lykke Li", "09:20", "10:10", "Indie Pop", "Sweden"),
+            e("Dijon", "10:40", "11:30", "R&B", "USA"),
+            e("Turnstile", "12:05", "13:00", "Hardcore Punk", "USA"),
+            e("Disclosure", "14:35", "15:50", "Electronic", "UK"),
+            e("Bonus Set from Do LaB", "15:55", "16:55", "Electronic", "USA"),
+            e("Dabeull (Replay)", "17:30", "18:20", "Funk/Disco", "France", true),
+            e("Lykke Li (Replay)", "18:50", "19:40", "Indie Pop", "Sweden", true),
+            e("Dijon (Replay)", "20:10", "21:00", "R&B", "USA", true),
+            e("Turnstile (Replay)", "21:35", "22:30", "Hardcore Punk", "USA", true)
+        ],
+        sahara: [
+            e("Youna", "08:00", "08:50", "Electronic", "South Korea"),
+            e("HUGEL", "08:50", "09:50", "House", "France"),
+            e("Marlon Hoffstadt", "10:15", "11:15", "Trance/Techno", "Germany"),
+            e("KATSEYE", "12:00", "12:45", "Pop/K-Pop", "Global"),
+            e("Levity", "13:15", "14:20", "Electronic", "USA"),
+            e("Swae Lee", "14:50", "15:40", "Hip Hop", "USA"),
+            e("Sexyy Red", "16:05", "16:55", "Hip Hop", "USA"),
+            e("Youna (Replay)", "17:30", "18:20", "Electronic", "South Korea", true),
+            e("HUGEL (Replay)", "18:20", "19:20", "House", "France", true),
+            e("Marlon Hoffstadt (Replay)", "19:45", "20:45", "Trance/Techno", "Germany", true),
+            e("KATSEYE (Replay)", "21:30", "22:15", "Pop/K-Pop", "Global", true),
+            e("Levity (Replay)", "22:45", "23:50", "Electronic", "USA", true)
+        ],
+        mojave: [
+            e("BINI", "08:15", "09:00", "P-Pop", "Philippines"),
+            e("Central Cee", "09:30", "10:15", "UK Drill", "UK"),
+            e("Devo", "10:45", "11:40", "New Wave", "USA"),
+            e("Moby", "12:10", "13:00", "Electronic", "USA"),
+            e("Slayyyter", "13:20", "14:05", "Hyperpop", "USA"),
+            e("Ethel Cain", "14:35", "15:25", "Indie Rock", "USA"),
+            e("Blood Orange", "15:55", "16:45", "R&B/Indie", "UK"),
+            e("BINI (Replay)", "17:45", "18:30", "P-Pop", "Philippines", true),
+            e("Central Cee (Replay)", "19:00", "19:45", "UK Drill", "UK", true),
+            e("Devo (Replay)", "20:15", "21:10", "New Wave", "USA", true),
+            e("Moby (Replay)", "21:40", "22:30", "Electronic", "USA", true),
+            e("Slayyyter (Replay)", "22:50", "23:35", "Hyperpop", "USA", true)
+        ],
+        gobi: [
+            e("Bob Baker Marionettes", "08:00", "08:40", "Performance", "USA"),
+            e("NewDad", "08:45", "09:25", "Indie Rock", "Ireland"),
+            e("Joyce Manor", "09:30", "10:10", "Pop Punk", "USA"),
+            e("CMAT", "10:15", "10:55", "Indie Pop", "Ireland"),
+            e("fakemink", "11:20", "12:00", "Electronic", "USA"),
+            e("Holly Humberstone", "12:25", "13:10", "Indie Pop", "UK"),
+            e("Joost", "13:50", "14:35", "Pop/Rap", "Netherlands"),
+            e("Creepy Nuts", "15:05", "15:55", "Hip Hop", "Japan"),
+            e("Bob Baker Marionettes (Replay)", "17:30", "18:10", "Performance", "USA", true),
+            e("NewDad (Replay)", "18:15", "18:55", "Indie Rock", "Ireland", true),
+            e("Joyce Manor (Replay)", "19:00", "19:40", "Pop Punk", "USA", true),
+            e("CMAT (Replay)", "19:45", "20:25", "Indie Pop", "Ireland", true),
+            e("fakemink (Replay)", "20:50", "21:30", "Electronic", "USA", true),
+            e("Holly Humberstone (Replay)", "21:55", "22:40", "Indie Pop", "UK", true),
+            e("Joost (Replay)", "23:20", "24:05", "Pop/Rap", "Netherlands", true)
+        ],
+        sonora: [
+            e("Wednesday", "08:00", "08:40", "Indie Rock", "USA"),
+            e("Fleshwater", "08:50", "09:30", "Alt Metal", "USA"),
+            e("The Two Lips", "10:00", "10:40", "Rock", "USA"),
+            e("Ninajirachi", "11:10", "12:00", "Electronic", "Australia"),
+            e("Cachirula & Loojan", "12:25", "13:05", "Latin/Electronic", "Mexico"),
+            e("February", "13:15", "13:45", "Indie", "USA"),
+            e("Hot Mulligan", "14:00", "14:45", "Emo/Pop Punk", "USA"),
+            e("Carolina Durante", "14:55", "15:35", "Indie Rock", "Spain"),
+            e("Not for Radio", "15:50", "16:50", "Electronic", "USA"),
+            e("Wednesday (Replay)", "17:30", "18:10", "Indie Rock", "USA", true),
+            e("Fleshwater (Replay)", "18:20", "19:00", "Alt Metal", "USA", true),
+            e("The Two Lips (Replay)", "19:30", "20:10", "Rock", "USA", true),
+            e("Ninajirachi (Replay)", "20:40", "21:30", "Electronic", "Australia", true),
+            e("Cachirula & Loojan (Replay)", "21:55", "22:35", "Latin/Electronic", "Mexico", true),
+            e("February (Replay)", "22:45", "23:15", "Indie", "USA", true),
+            e("Hot Mulligan (Replay)", "23:30", "24:15", "Emo/Pop Punk", "USA", true)
+        ],
+        quasar: [
+            e("Tiga", "09:00", "11:00", "Electronic", "Canada"),
+            e("Deep Dish", "11:00", "13:00", "Electronic", "USA/Iran"),
+            e("PAWSA", "13:00", "15:00", "Tech House", "UK"),
+            e("Disco Lines", "15:00", "17:00", "Electronic", "USA"),
+            e("Tiga (Replay)", "18:30", "20:30", "Electronic", "Canada", true),
+            e("Deep Dish (Replay)", "20:30", "22:30", "Electronic", "USA/Iran", true),
+            e("PAWSA (Replay)", "22:30", "24:30", "Tech House", "UK", true)
+        ]
+    },
+    day2: {
+        date: "2026-04-12",
+        main: [
+            e("Addison Rae", "09:30", "10:20", "Pop", "USA"),
+            e("GIVĒON", "11:00", "11:50", "R&B", "USA"),
+            e("The Strokes", "13:00", "14:10", "Indie Rock", "USA"),
+            e("Justin Bieber", "15:25", "16:55", "Pop", "Canada"),
+            e("Addison Rae (Replay)", "19:00", "19:50", "Pop", "USA", true),
+            e("GIVĒON (Replay)", "20:30", "21:20", "R&B", "USA", true),
+            e("The Strokes (Replay)", "22:30", "23:40", "Indie Rock", "USA", true)
+        ],
+        outdoor: [
+            e("Los Hermanos Flores", "08:00", "08:50", "Cumbia", "El Salvador"),
+            e("Alex G", "09:10", "10:00", "Indie Rock", "USA"),
+            e("Blondshell", "10:10", "10:55", "Indie Rock", "USA"),
+            e("SOMBR", "11:05", "11:55", "Indie", "USA"),
+            e("Labrinth", "12:30", "13:25", "R&B/Electronic", "UK"),
+            e("David Byrne", "14:20", "15:20", "Rock/Pop", "UK/USA"),
+            e("Los Hermanos Flores (Replay)", "17:30", "18:20", "Cumbia", "El Salvador", true),
+            e("Alex G (Replay)", "18:40", "19:30", "Indie Rock", "USA", true),
+            e("Blondshell (Replay)", "19:40", "20:25", "Indie Rock", "USA", true),
+            e("SOMBR (Replay)", "20:35", "21:25", "Indie", "USA", true),
+            e("Labrinth (Replay)", "22:00", "22:55", "R&B/Electronic", "UK", true)
+        ],
+        sahara: [
+            e("ZULAN", "08:00", "08:50", "Electronic", "Global"),
+            e("Hamdi", "09:00", "09:55", "Dubstep/Grime", "UK"),
+            e("¥ØU$UK€ ¥UK1MAT$U", "10:15", "11:10", "Electronic", "Japan"),
+            e("TEED", "11:15", "11:55", "Electronic", "UK"),
+            e("Nine Inch Noize", "12:00", "12:45", "Electronic", "USA"),
+            e("REZZ", "13:10", "14:05", "Electronic", "Canada"),
+            e("Adriatique", "14:30", "15:25", "Electronic", "Switzerland"),
+            e("Worship", "15:55", "16:55", "Drum & Bass", "UK"),
+            e("ZULAN (Replay)", "17:30", "18:20", "Electronic", "Global", true),
+            e("Hamdi (Replay)", "18:30", "19:25", "Dubstep/Grime", "UK", true),
+            e("¥ØU$UK€ ¥UK1MAT$U (Replay)", "19:45", "20:40", "Electronic", "Japan", true),
+            e("TEED (Replay)", "20:45", "21:25", "Electronic", "UK", true),
+            e("Nine Inch Noize (Replay)", "21:30", "22:15", "Electronic", "USA", true),
+            e("REZZ (Replay)", "22:40", "23:35", "Electronic", "Canada", true)
+        ],
+        mojave: [
+            e("Jack White", "08:00", "08:45", "Rock", "USA"),
+            e("Fujii Kaze", "08:50", "09:40", "J-Pop/R&B", "Japan"),
+            e("Royel Otis", "09:50", "10:35", "Indie Pop", "Australia"),
+            e("Taemin", "11:30", "12:20", "K-Pop", "South Korea"),
+            e("PinkPantheress", "12:55", "13:45", "Pop/Dance", "UK"),
+            e("Interpol", "14:15", "15:15", "Indie Rock", "USA"),
+            e("Jack White (Replay)", "17:30", "18:15", "Rock", "USA", true),
+            e("Fujii Kaze (Replay)", "18:35", "19:25", "J-Pop/R&B", "Japan", true),
+            e("Royel Otis (Replay)", "19:30", "20:15", "Indie Pop", "Australia", true),
+            e("Taemin (Replay)", "21:00", "21:50", "K-Pop", "South Korea", true),
+            e("PinkPantheress (Replay)", "22:25", "23:15", "Pop/Dance", "UK", true),
+            e("Interpol (Replay)", "23:45", "24:45", "Indie Rock", "USA", true)
+        ],
+        gobi: [
+            e("WHATMORE", "08:05", "08:45", "Electronic", "USA"),
+            e("Luísa Sonza", "09:10", "09:50", "Pop", "Brazil"),
+            e("Geese", "10:15", "11:00", "Indie Rock", "USA"),
+            e("Noga Erez", "11:05", "11:50", "Electropop", "Israel"),
+            e("Davido", "11:50", "12:35", "Afrobeats", "Nigeria"),
+            e("BIA", "13:00", "13:45", "Hip Hop", "USA"),
+            e("Morat", "14:10", "15:00", "Latin Pop", "Colombia"),
+            e("WHATMORE (Replay)", "17:35", "18:15", "Electronic", "USA", true),
+            e("Luísa Sonza (Replay)", "18:40", "19:20", "Pop", "Brazil", true),
+            e("Geese (Replay)", "19:45", "20:30", "Indie Rock", "USA", true),
+            e("Noga Erez (Replay)", "20:35", "21:20", "Electropop", "Israel", true),
+            e("Davido (Replay)", "21:20", "22:05", "Afrobeats", "Nigeria", true),
+            e("BIA (Replay)", "22:40", "23:25", "Hip Hop", "USA", true),
+            e("Morat (Replay)", "23:45", "24:35", "Latin Pop", "Colombia", true)
+        ],
+        sonora: [
+            e("Ecca Vandal", "08:20", "09:00", "Punk/Hip Hop", "Australia"),
+            e("Ceremony", "09:30", "10:10", "Punk Rock", "USA"),
+            e("rusowsky", "10:40", "11:20", "Indie Pop", "Spain"),
+            e("54 Ultra", "11:50", "12:30", "Rock", "USA"),
+            e("Die Spitz", "12:45", "13:25", "Punk", "USA"),
+            e("Mind Enterprises", "13:45", "14:35", "Electronic/Disco", "Italy"),
+            e("Freak Slug", "14:45", "15:25", "Indie Pop", "UK"),
+            e("Ecca Vandal (Replay)", "17:50", "18:30", "Punk/Hip Hop", "Australia", true),
+            e("Ceremony (Replay)", "19:00", "19:40", "Punk Rock", "USA", true),
+            e("rusowsky (Replay)", "20:10", "20:50", "Indie Pop", "Spain", true),
+            e("54 Ultra (Replay)", "21:20", "22:00", "Rock", "USA", true),
+            e("Die Spitz (Replay)", "22:15", "22:55", "Punk", "USA", true),
+            e("Mind Enterprises (Replay)", "23:15", "24:05", "Electronic/Disco", "Italy", true)
+        ],
+        quasar: [
+            e("Joezi", "09:00", "11:00", "Afro House", "France"),
+            e("Afrojack x Shimza", "11:00", "13:00", "Electronic", "Netherlands/SA"),
+            e("Joezi (Replay)", "18:30", "20:30", "Afro House", "France", true),
+            e("Afrojack x Shimza (Replay)", "20:30", "22:30", "Electronic", "Netherlands/SA", true),
+            e("David Guetta (Replay)", "22:45", "24:45", "Electronic", "France", true)
+        ]
+    },
+    day3: {
+        date: "2026-04-13",
+        main: [
+            e("Tijuana Panthers", "08:00", "08:35", "Indie Rock", "USA"),
+            e("Wet Leg", "08:45", "09:30", "Indie Rock", "UK"),
+            e("Major Lazer", "10:10", "11:10", "Electronic", "USA"),
+            e("Young Thug", "11:50", "12:40", "Hip Hop", "USA"),
+            e("KAROL G", "13:55", "15:55", "Reggaeton", "Colombia"),
+            e("Tijuana Panthers (Replay)", "16:30", "17:05", "Indie Rock", "USA", true),
+            e("Wet Leg (Replay)", "17:15", "18:00", "Indie Rock", "UK", true),
+            e("Major Lazer (Replay)", "18:40", "19:40", "Electronic", "USA", true),
+            e("Young Thug (Replay)", "20:20", "21:10", "Hip Hop", "USA", true),
+            e("KAROL G (Replay)", "22:25", "24:05", "Reggaeton", "Colombia", true)
+        ],
+        outdoor: [
+            e("Gigi Perez", "08:00", "08:45", "Singer-songwriter", "USA"),
+            e("CLIPSE", "09:15", "10:10", "Hip Hop", "USA"),
+            e("Foster The People", "10:45", "11:40", "Indie Pop", "USA"),
+            e("Laufey", "12:40", "13:40", "Jazz Pop", "Iceland"),
+            e("BIGBANG", "14:30", "15:30", "K-Pop", "South Korea"),
+            e("Gigi Perez (Replay)", "16:30", "17:15", "Singer-songwriter", "USA", true),
+            e("CLIPSE (Replay)", "17:45", "18:40", "Hip Hop", "USA", true),
+            e("Foster The People (Replay)", "19:15", "20:10", "Indie Pop", "USA", true),
+            e("Laufey (Replay)", "21:10", "22:10", "Jazz Pop", "Iceland", true),
+            e("BIGBANG (Replay)", "23:00", "24:15", "K-Pop", "South Korea", true)
+        ],
+        sahara: [
+            e("Girl Math", "08:00", "09:00", "House", "USA"),
+            e("BUNT.", "09:05", "10:05", "Electronic", "Germany"),
+            e("Duke Dumont", "10:10", "11:10", "Electronic", "UK"),
+            e("Mochakk", "11:25", "12:25", "House", "Brazil"),
+            e("Subtronics", "13:05", "14:05", "Dubstep", "USA"),
+            e("Kaskade", "14:45", "15:55", "Electronic", "USA"),
+            e("Girl Math (Replay)", "16:30", "17:30", "House", "USA", true),
+            e("BUNT. (Replay)", "17:35", "18:35", "Electronic", "Germany", true),
+            e("Duke Dumont (Replay)", "18:40", "19:40", "Electronic", "UK", true),
+            e("Mochakk (Replay)", "19:55", "20:55", "House", "Brazil", true),
+            e("Subtronics (Replay)", "21:35", "22:35", "Dubstep", "USA", true),
+            e("Kaskade (Replay)", "23:15", "24:25", "Electronic", "USA", true)
+        ],
+        mojave: [
+            e("Little Simz", "08:25", "09:10", "Hip Hop", "UK"),
+            e("Suicidal Tendencies", "09:35", "10:25", "Crossover Thrash", "USA"),
+            e("Samia", "10:30", "11:10", "Indie Rock", "USA"),
+            e("Iggy Pop", "11:10", "12:10", "Rock", "USA"),
+            e("FKA twigs", "12:45", "14:00", "Avant-Pop", "UK"),
+            e("Little Simz (Replay)", "16:55", "17:40", "Hip Hop", "UK", true),
+            e("Suicidal Tendencies (Replay)", "18:05", "18:55", "Crossover Thrash", "USA", true),
+            e("Samia (Replay)", "19:00", "19:40", "Indie Rock", "USA", true),
+            e("Iggy Pop (Replay)", "19:40", "20:40", "Rock", "USA", true),
+            e("FKA twigs (Replay)", "21:15", "22:30", "Avant-Pop", "UK", true)
+        ],
+        gobi: [
+            e("COBRAH", "08:05", "08:50", "Electronic", "Sweden"),
+            e("Oklou", "09:15", "10:00", "Electronic Pop", "France"),
+            e("Black Flag", "10:30", "11:05", "Punk Rock", "USA"),
+            e("flowerovlove", "11:10", "11:40", "Indie Pop", "UK"),
+            e("TOMORA", "11:45", "12:35", "Electronic", "Global"),
+            e("The Rapture", "13:05", "13:55", "Dance-Punk", "USA"),
+            e("The Chats", "14:00", "14:40", "Punk Rock", "Australia"),
+            e("COBRAH (Replay)", "16:35", "17:20", "Electronic", "Sweden", true),
+            e("Oklou (Replay)", "17:45", "18:30", "Electronic Pop", "France", true),
+            e("Black Flag (Replay)", "19:00", "19:35", "Punk Rock", "USA", true),
+            e("flowerovlove (Replay)", "19:40", "20:10", "Indie Pop", "UK", true),
+            e("TOMORA (Replay)", "20:15", "21:05", "Electronic", "Global", true),
+            e("The Rapture (Replay)", "21:35", "22:25", "Dance-Punk", "USA", true),
+            e("The Chats (Replay)", "22:30", "23:10", "Punk Rock", "Australia", true)
+        ],
+        sonora: [
+            e("Model/Actriz", "08:00", "08:40", "Noise Rock", "USA"),
+            e("Jane Remover", "08:45", "09:25", "Hyperpop", "USA"),
+            e("Los Retros", "09:30", "10:10", "Indie Pop", "USA"),
+            e("RØZ", "10:40", "11:30", "Indie", "USA"),
+            e("DRAIN", "12:00", "12:40", "Hardcore Punk", "USA"),
+            e("French Police", "13:10", "14:00", "Post-Punk", "USA"),
+            e("Glitterer", "14:15", "14:55", "Indie Rock", "USA"),
+            e("Model/Actriz (Replay)", "16:30", "17:10", "Noise Rock", "USA", true),
+            e("Jane Remover (Replay)", "17:15", "17:55", "Hyperpop", "USA", true),
+            e("Los Retros (Replay)", "18:00", "18:40", "Indie Pop", "USA", true),
+            e("RØZ (Replay)", "19:20", "20:10", "Indie", "USA", true),
+            e("DRAIN (Replay)", "20:30", "21:10", "Hardcore Punk", "USA", true),
+            e("French Police (Replay)", "21:40", "22:30", "Post-Punk", "USA", true),
+            e("Glitterer (Replay)", "22:45", "23:25", "Indie Rock", "USA", true)
+        ],
+        quasar: [
+            e("Jazzy", "08:00", "10:00", "Electronic", "Ireland"),
+            e("JOY (Anonymous)", "10:00", "12:00", "Electronic", "UK"),
+            e("Fatboy Slim", "12:00", "14:00", "Electronic", "UK"),
+            e("Jazzy (Replay)", "16:30", "18:30", "Electronic", "Ireland", true),
+            e("JOY (Anonymous) (Replay)", "18:30", "20:30", "Electronic", "UK", true),
+            e("Fatboy Slim (Replay)", "20:30", "22:30", "Electronic", "UK", true)
+        ]
+    }
+};
+
+/* =========================================================================
+   🧠 3. アプリケーション状態＆ローカルストレージ（LOGIC）
+   ========================================================================= */
+let currentDay = 1; // 現在選択されている日（1, 2, 3）
+
+// お気に入り情報をLocalStorageから読み込み（なければ空オブジェクト）
+let favorites = JSON.parse(localStorage.getItem('coachella_favs')) || {};
+
+/** お気に入り情報をLocalStorageへ保存する処理 */
+function saveFavorites() {
+    localStorage.setItem('coachella_favs', JSON.stringify(favorites));
+}
+
+/** お気に入りの追加・削除を切り替える処理 */
+function toggleFav(id) {
+    if (favorites[id]) delete favorites[id];
+    else favorites[id] = true;
+    saveFavorites();
+    renderTimetable(); // 表示を即時反映
+}
+
+/* =========================================================================
+   🕒 4. 時間計算ロジック（LOGIC）
+   ========================================================================= */
+/**
+ * 時刻文字列(HH:mm)を、開始時間(START_HOUR)からの経過分に変換する。
+ * 深夜時間帯(0:00〜)にも対応。
+ */
+function timeToMins(timeStr) {
+    const [h, m] = timeStr.split(':').map(Number);
+    return ((h < CONFIG.START_HOUR ? h + 24 : h) - CONFIG.START_HOUR) * 60 + m;
+}
+
+/** 表示用の時刻フォーマット調整 (24以上の数値を翌日表記に直す) */
+function formatTimeDisplay(timeStr) {
+    let [h, m] = timeStr.split(':').map(Number);
+    if(h >= 24) h -= 24;
+    return `${h}:${m.toString().padStart(2,'0')}`;
+}
+
+/** ヘッダーとタイムテーブル本体の横スクロールを同期させる処理 */
+function syncScroll() {
+    document.getElementById('headerWrapper').scrollLeft = document.getElementById('ttWrapper').scrollLeft;
+}
+
+/**
+ * ライブ進行中の赤線を引くための「現在の相対的な分」を取得する。
+ * 表示中の日程と実際の現実の日付が合致している時のみ数値を返す。
+ */
+function getRelativeMins(baseDateStr) {
+    const now = new Date();
+    const dataDate = new Date(baseDateStr);
+    
+    // 年月日が一致しているか、または翌日の深夜(START_HOUR未満)かチェック
+    const isToday = now.toDateString() === dataDate.toDateString();
+    const isLateNight = now.getHours() < CONFIG.START_HOUR && now.getDate() === dataDate.getDate() + 1;
+    
+    if (isToday || isLateNight) {
+        let h = now.getHours();
+        if (h < CONFIG.START_HOUR) h += 24;
+        return (h - CONFIG.START_HOUR) * 60 + now.getMinutes();
+    }
+    return null; // 該当日でなければ線は表示しない
+}
+
+/* =========================================================================
+   🎨 5. レンダリング・HTML生成（RENDERING）
+   ========================================================================= */
+/**
+ * ステージヘッダー部分のHTMLを生成・描画する処理。
+ * マイタイムテーブルの列数（myttCols）に応じて見出しの幅を結合・調整する。
+ */
+function renderHeaders(myttCols) {
+    let html = '';
+    
+    // マイタイムテーブルの見出し（列が1つ以上あれば生成）
+    if(myttCols > 0) {
+        html += `<div class="stage-header mytt" style="width: calc(var(--col-width) * ${myttCols});"><div class="stage-name mytt">マイタイムテーブル</div></div>`;
+    }
+    
+    // 各ステージの見出し
+    stagesInfo.forEach(stage => {
+        html += `<div class="stage-header">
+            <div class="stage-name" style="background-color: ${stage.color}">${stage.name}</div>
+            <a href="https://www.youtube.com/watch?v=${stage.yt}" target="_blank" class="watch-link">Watch Live</a>
+        </div>`;
+    });
+    document.getElementById('stageHeaders').innerHTML = html;
+}
+
+/**
+ * 個別のアーティストブロックのHTMLを生成する処理。
+ * 時間の長さに応じて高さを計算し、色やクラスを適用する。
+ */
+function getArtistHtml(artist, stage, dayKey, isMyTT = false, currentMins) {
+    const startMin = timeToMins(artist.start);
+    const endMin = timeToMins(artist.end);
+    const duration = endMin - startMin;
+    
+    // 一意のIDを生成してお気に入りの判定に使用
+    const favId = `${dayKey}_${stage.id}_${artist.name.replace(/\s+/g, '')}`;
+    const isFav = favorites[favId];
+    
+    // 現在の時間がアーティストの出演時間内かどうか判定
+    const isPlaying = currentMins !== null && currentMins >= startMin && currentMins < endMin;
+
+    const classes = ['artist-block'];
+    if(artist.isReplay) classes.push('is-replay');
+    if(isFav) classes.push('favorited');
+    if(isPlaying) classes.push('playing');
+
+    return `
+    <div class="${classes.join(' ')}" style="top: ${startMin * CONFIG.PX_PER_MIN}px; height: ${duration * CONFIG.PX_PER_MIN}px; background-color: ${stage.color};">
+        <div class="artist-top">
+            <span class="artist-time">${formatTimeDisplay(artist.start)}-${formatTimeDisplay(artist.end)}</span>
+            <button class="fav-btn ${isFav ? 'active' : ''}" onclick="toggleFav('${favId}')">★</button>
+        </div>
+        <div class="artist-name">${artist.name}</div>
+        <div class="artist-meta">${artist.genre} | ${artist.origin} ${isMyTT ? '<br>['+stage.name+']' : ''}</div>
+    </div>`;
+}
+
+/**
+ * タイムテーブル全体（時間軸、マイタイムテーブル、各ステージ）を再描画するメイン処理。
+ */
+function renderTimetable() {
+    const dayKey = `day${currentDay}`;
+    const data = timetableData[dayKey];
+    const currentMins = getRelativeMins(data.date);
+    
+    // ① 時間軸カラムの生成
+    let timeHtml = '';
+    for(let h=CONFIG.START_HOUR; h<=CONFIG.END_HOUR; h++) {
+        timeHtml += `<div class="time-slot"><span>${h >= 24 ? h-24 : h}:00</span></div>`;
+    }
+    document.getElementById('timeCol').innerHTML = timeHtml;
+
+// ②マイタイムテーブルの列を元のステージ順に基づいて構築するロジック
+    let myTtColumns = [];
+    
+    // stagesInfoの順番（元のステージ列の順番）で処理を行う
+    stagesInfo.forEach(stage => {
+        let colItems = [];
+        if(data[stage.id]) {
+            data[stage.id].forEach(artist => {
+                const favId = `${dayKey}_${stage.id}_${artist.name.replace(/\s+/g, '')}`;
+                if(favorites[favId]) colItems.push({ artist, stage });
+            });
+        }
+        
+        // そのステージにお気に入りアーティストが1組以上いる場合のみ、マイタイムテーブルの1列として追加
+        if(colItems.length > 0) {
+            // 時間順にソート（同じステージ内なので基本被らないが順序を保証）
+            colItems.sort((a,b) => timeToMins(a.artist.start) - timeToMins(b.artist.start));
+            myTtColumns.push(colItems);
+        }
+    });
+    
+    // ヘッダーの描画（算出されたマイタイムテーブルの列数を渡す）
+    renderHeaders(myTtColumns.length);
+
+    // ③ グリッド（MyTT + 各ステージ）の描画
+    let gridHtml = '';
+    
+    // マイタイムテーブル列の描画
+    myTtColumns.forEach(colItems => {
+        gridHtml += `<div class="grid-col mytt"><div class="grid-bg-lines"></div>`;
+        colItems.forEach(item => gridHtml += getArtistHtml(item.artist, item.stage, dayKey, true, currentMins));
+        gridHtml += `</div>`;
+    });
+    
+    // 通常ステージ列の描画
+    stagesInfo.forEach(stage => {
+        gridHtml += `<div class="grid-col"><div class="grid-bg-lines"></div>`;
+        if(data[stage.id]) {
+            data[stage.id].forEach(artist => gridHtml += getArtistHtml(artist, stage, dayKey, false, currentMins));
+        }
+        gridHtml += `</div>`;
+    });
+    
+    // 最後に現在時刻線を配置
+    gridHtml += `<div class="current-time-line" id="currentTimeLine"></div>`;
+    document.getElementById('gridContainer').innerHTML = gridHtml;
+    
+    // 線の位置を更新
+    updateCurrentTimeLine();
+}
+
+/* =========================================================================
+   🚀 6. インタラクション＆初期化（INITIALIZATION）
+   ========================================================================= */
+/**
+ * 上部のタブをクリックして表示日を切り替える処理。
+ */
+function switchDay(day) {
+    currentDay = day;
+    // タブの見た目（アクティブ状態）を更新
+    document.querySelectorAll('.tab-btn').forEach((btn, idx) => btn.classList.toggle('active', idx + 1 === day));
+    renderTimetable();
+}
+
+/**
+ * 現在時刻（赤い線）の表示位置を更新する処理。
+ * 定期的に実行されます。
+ */
+function updateCurrentTimeLine() {
+    const line = document.getElementById('currentTimeLine');
+    if(!line) return;
+
+    const data = timetableData[`day${currentDay}`];
+    const currentMins = getRelativeMins(data.date);
+
+    // 時間枠内（開始〜終了時刻）に収まっている場合のみ線を描画
+    if(currentMins !== null && currentMins >= 0 && currentMins <= (CONFIG.END_HOUR - CONFIG.START_HOUR) * 60) {
+        line.style.display = 'block';
+        line.style.top = `${currentMins * CONFIG.PX_PER_MIN}px`;
+    } else {
+        line.style.display = 'none';
+    }
+}
+
+// ページの初期レンダリングを実行
+renderTimetable();
+
+// 1分(60000ミリ秒)ごとに現在時刻線を自動更新
+setInterval(updateCurrentTimeLine, 60000);
+</script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
