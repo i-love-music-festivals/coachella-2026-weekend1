@@ -119,6 +119,7 @@
     /* ステージ名ヘッダーのラッパー（横スクロール同期用） */
     .stage-headers-wrapper {
         display: flex;
+        justify-content: center;
         overflow-x: hidden;
         flex-shrink: 0;
         border-bottom: 2px solid #333;
@@ -194,6 +195,7 @@
     /* スクロール可能なタイムテーブル本体 */
     .timetable-wrapper {
         display: flex;
+        justify-content: center;
         flex-grow: 1;
         overflow: auto;
         position: relative;
@@ -783,7 +785,7 @@ function renderHeaders(myttCols) {
     stagesInfo.forEach(stage => {
         html += `<div class="stage-header">
             <div class="stage-name" style="background-color: ${stage.color}">${stage.name}</div>
-            <a href="https://www.youtube.com/watch?v=${stage.yt}" target="_blank" class="watch-link">Watch Live</a>
+            <a href="https://www.youtube.com/watch?v=${stage.yt}" target="_blank" class="watch-link">Watch Live📺</a>
         </div>`;
     });
     document.getElementById('stageHeaders').innerHTML = html;
